@@ -1,0 +1,81 @@
+name: RisingOS Builder
+
+on:
+  workflow_dispatch:
+    inputs:
+      BRAND:
+        description: 'Put your device manufacturer name please.'
+        required: true
+      CODENAME:
+        description: 'Put your device codename please.'
+        required: true
+      SIGNING:
+        description: 'The build signing. Set to "normal" by default.'
+        required: true
+        default: 'normal'
+        type: choice
+        options:
+          - 'full'
+          - 'normal'
+          - 'normal-fastboot'
+      TYPE:
+        description: 'The build type. Set to "userdebug" by default.'
+        required: true
+        default: 'userdebug'
+        type: choice
+        options:
+          - 'eng'
+          - 'user'
+          - 'userdebug'
+      RELEASE:
+        description: 'The build target. Set to "stable" by default.'
+        required: true
+        default: 'stable'
+        type: choice
+        options:
+          - 'test'
+          - 'stable'
+
+run-name: "RisingOS Build: ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ inputs.TYPE }}, ${{ inputs.RELEASE }}]"
+
+jobs:
+  build:
+    env:
+      USER: sketu
+      BRAND: ${{ inputs.BRAND }}
+      CODENAME: ${{ inputs.CODENAME }}
+      SIGNING: ${{ inputs.SIGNING }}
+      TYPE: ${{ inputs.TYPE }}
+      RELEASE: ${{ inputs.RELEASE }}
+    runs-on: self-hosted
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Run Pre-Cleanup Script
+        run: bash clean.sh
+
+      #- name: Init and Sync
+        #run: sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no "${{ env.USER }}@${{ secrets.IP }}" 'cd /home/sketu/rising && bash init.sh'
+        #continue-on-error: true
+
+      - name: Clone Repositories
+        run: bash clone.sh
+
+      - name: Build Project
+        run: bash build.sh
+
+      - name: Upload Build Logs and json
+        uses: actions/upload-artifact@v2
+        with:
+          name: build-logs
+          path: |
+            /home/sketu/rising/build.log
+            /home/sketu/rising/out/target/product/*/*${CODENAME}.json
+
+      - name: Upload Artifacts
+        run: bash upload.sh
+
+      - name: Run Post-Cleanup Script
+        if: ${{ always() }}
+        run: bash clean.sh
