@@ -3,15 +3,12 @@ set -e
 
 cd /home/sketu/rising
 
-rm -rf build.log
-rm -rf out/target/*
-
+rm -rf out/target/product/$CODENAME
 rm -rf .repo/local_manifests
 rm -rf .repo/projects/device/$BRAND
 rm -rf .repo/projects/vendor/$BRAND
 rm -rf .repo/projects/kernel/$BRAND
-rm -rf .repo/projects/hardware
-rm -rf /home/sketu/rising/vendor/lineage-priv/keys/
+rm -rf vendor/lineage-priv/keys/
 
 clean_dependencies() {
     local dependencies_file=$1

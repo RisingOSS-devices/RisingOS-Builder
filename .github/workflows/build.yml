@@ -50,10 +50,7 @@ jobs:
     runs-on: self-hosted
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Run Pre-Cleanup Script
-        run: bash clean.sh
+        uses: actions/checkout@v4.1.7
 
       #- name: Init and Sync
         #run: sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no "${{ env.USER }}@${{ secrets.IP }}" 'cd /home/sketu/rising && bash init.sh'
@@ -62,20 +59,20 @@ jobs:
       - name: Clone Repositories
         run: bash clone.sh
 
-      - name: Build Project
+      - name: Build RisingOS
         run: bash build.sh
-
-      - name: Upload Build Logs and json
-        uses: actions/upload-artifact@v2
+            
+      - name: Upload Build Artifacts
+        uses: actions/upload-artifact@v4.3.6
         with:
           name: build-logs
           path: |
-            /home/sketu/rising/build.log
+            /home/sketu/rising/out/error.log
             /home/sketu/rising/out/target/product/*/*${CODENAME}.json
 
-      - name: Upload Artifacts
+      - name: Upload Build Files
         run: bash upload.sh
 
-      - name: Run Post-Cleanup Script
+      - name: Post-Cleanup
         if: ${{ always() }}
         run: bash clean.sh

@@ -6,9 +6,9 @@ cd /home/sketu/rising
 riseup ${CODENAME} ${TYPE}
 
 if [ "$SIGNING" == "normal" ]; then
-    rise b | tee build.log
+    rise b
 elif [ "$SIGNING" == "full" ]; then
-    rise sb | tee build.log
+    rise sb
 elif [ "$SIGNING" == "normal-fastboot" ]; then
-    rise fb | tee build.log
+    rise fb
 fi

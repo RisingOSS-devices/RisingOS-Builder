@@ -27,6 +27,23 @@ function find_repo {
   echo ""
 }
 
+function get_remote_url {
+  local remote_name=$1
+  local repo=$2
+
+  case $remote_name in
+    github)
+      echo "https://github.com/$repo.git"
+      ;;
+    gitlab)
+      echo "https://gitlab.com/$repo.git"
+      ;;
+    *)
+      echo "https://github.com/$repo.git"
+      ;;
+  esac
+}
+
 function clone_and_check_dependencies {
   local repo_url=$1
   local dest_dir=$2
@@ -59,23 +76,8 @@ function clone_and_check_dependencies {
     local dependency_repository=$(echo "$dependency" | jq -r '.repository')
     local dependency_branch=$(echo "$dependency" | jq -r '.branch // "fourteen"')
     local dependency_target_path=$(echo "$dependency" | jq -r '.target_path')
-    local dependency_url
-
-    if [[ "$dependency_repository" =~ ^https?:// ]]; then
-      dependency_url="$dependency_repository"
-    else
-      local remote_name=$(echo "$dependency" | jq -r '.remote // empty')
-      if [[ -n "$remote_name" ]]; then
-        dependency_url="https://github.com/$dependency_repository.git"
-      else
-        dependency_url=$(find_repo "$dependency_repository")
-        
-        if [[ -z "$dependency_url" ]]; then
-          echo "Error: Repository $dependency_repository not found in RisingOSS-devices or LineageOS."
-          continue
-        fi
-      fi
-    fi
+    local remote_name=$(echo "$dependency" | jq -r '.remote // "github"')
+    local dependency_url=$(get_remote_url "$remote_name" "$dependency_repository")
 
     if ! clone_and_check_dependencies "$dependency_url" "$dependency_target_path"; then
       echo "Warning: Failed to clone dependency $dependency_url. Continuing with next dependency."
