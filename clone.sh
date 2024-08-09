@@ -12,21 +12,6 @@ function repo_exists {
   return $?
 }
 
-function find_repo {
-  local repo_name=$1
-  local orgs=("RisingOSS-devices" "LineageOS")
-  
-  for org in "${orgs[@]}"; do
-    local repo_url="https://github.com/$org/$repo_name.git"
-    if repo_exists "$repo_url"; then
-      echo "$repo_url"
-      return
-    fi
-  done
-  
-  echo ""
-}
-
 function get_remote_url {
   local remote_name=$1
   local repo=$2
@@ -44,24 +29,44 @@ function get_remote_url {
   esac
 }
 
+function find_repo_with_fallback {
+  local repo_name=$1
+  local username=$2
+  local orgs=("RisingOSS-devices" "LineageOS")
+  
+  if [[ -n "$username" ]]; then
+    repo_url="https://github.com/$username/$repo_name.git"
+    if repo_exists "$repo_url"; then
+      echo "$repo_url"
+      return
+    fi
+  fi
+
+  for org in "${orgs[@]}"; do
+    local repo_url="https://github.com/$org/$repo_name.git"
+    if repo_exists "$repo_url"; then
+      echo "$repo_url"
+      return
+    fi
+  done
+
+  echo ""
+}
+
 function clone_and_check_dependencies {
   local repo_url=$1
   local dest_dir=$2
-
   if [[ -d "$dest_dir" ]]; then
     rm -rf "$dest_dir"
   fi
-
   git clone "$repo_url" --depth=1 "$dest_dir" || {
     echo "Error: Failed to clone the repository $repo_url."
     exit 1
   }
-
   if [[ -f "$dest_dir/vendorsetup.sh" ]]; then
     echo "Error: vendorsetup.sh found in $dest_dir. Please remove it and add to rising.dependencies."
     exit 1
   fi
-
   local dependencies_file
   if [[ -f "$dest_dir/rising.dependencies" ]]; then
     dependencies_file="$dest_dir/rising.dependencies"
@@ -70,15 +75,22 @@ function clone_and_check_dependencies {
   else
     return 0
   fi
-
   echo "Found dependencies file: $dependencies_file"
   jq -c '.[]' "$dependencies_file" | while read -r dependency; do
     local dependency_repository=$(echo "$dependency" | jq -r '.repository')
     local dependency_branch=$(echo "$dependency" | jq -r '.branch // "fourteen"')
     local dependency_target_path=$(echo "$dependency" | jq -r '.target_path')
     local remote_name=$(echo "$dependency" | jq -r '.remote // "github"')
-    local dependency_url=$(get_remote_url "$remote_name" "$dependency_repository")
-
+    local username=""
+    if [[ "$dependency_repository" == *"/"* ]]; then
+      username=$(echo "$dependency_repository" | cut -d'/' -f1)
+      dependency_repository=$(echo "$dependency_repository" | cut -d'/' -f2-)
+    fi
+    local dependency_url=$(find_repo_with_fallback "$dependency_repository" "$username")
+    if [[ -z "$dependency_url" ]]; then
+      echo "Warning: Failed to find repository $dependency_repository. Continuing with next dependency."
+      continue
+    fi
     if ! clone_and_check_dependencies "$dependency_url" "$dependency_target_path"; then
       echo "Warning: Failed to clone dependency $dependency_url. Continuing with next dependency."
     fi
