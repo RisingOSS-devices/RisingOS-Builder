@@ -1,6 +1,5 @@
 #!/bin/bash bash
 set -e
-USE_CCACHE=0
 cd /home/sketu/rising
 . build/envsetup.sh
 riseup ${CODENAME} ${TYPE}
