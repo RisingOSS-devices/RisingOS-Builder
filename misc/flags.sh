@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd /home/sketu/rising
+
 if [ -z "$VARIANT" ]; then
     echo "VARIANT environment variable is not set. Please set it to one of: VANILLA, CORE, GAPPS."
     exit 1
@@ -17,7 +19,6 @@ process_file() {
     tmp_file=$(mktemp)
     WITH_GMS_handled=false
     TARGET_CORE_GMS_handled=false
-    
     while IFS= read -r line; do
         if [[ "$line" =~ WITH_GMS ]]; then
             WITH_GMS_handled=true
@@ -55,10 +56,6 @@ process_file() {
 }
 
 files=$(find device/$BRAND/$CODENAME -name 'lineage_$CODENAME.mk')
-
-if [[ -z "$files" ]]; then
-    exit 1
-fi
 
 for file in $files; do
     process_file "$file" "$value"
