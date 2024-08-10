@@ -3,6 +3,8 @@ set -e
 
 cd /home/sketu/rising
 
+log_file="cloned_repositories.txt"
+> "$log_file"
 primary_repo_url="https://github.com/RisingOSS-devices/android_device_${BRAND}_${CODENAME}.git"
 fallback_repo_url="https://github.com/LineageOS/android_device_${BRAND}_${CODENAME}.git"
 
@@ -64,6 +66,7 @@ function clone_and_check_dependencies {
     echo "Error: Failed to clone the repository $repo_url."
     exit 1
   }
+  echo "$dest_dir" >> "$log_file"
   if [[ -f "$dest_dir/vendorsetup.sh" ]]; then
     echo "Error: vendorsetup.sh found in $dest_dir. Please remove it and add to rising.dependencies."
     exit 1
