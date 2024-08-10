@@ -35,6 +35,15 @@ on:
         options:
           - 'test'
           - 'stable'
+      VARIANT:
+        description: 'If you wanna build other variants like vanilla, core or gapps.'
+        required: false
+        default: 'CORE'
+        type: choice
+        options:
+          - 'VANILLA'
+          - 'CORE'
+          - 'GAPPS'
 
 run-name: "RisingOS Build: ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ inputs.TYPE }}, ${{ inputs.RELEASE }}]"
 
@@ -47,6 +56,7 @@ jobs:
       SIGNING: ${{ inputs.SIGNING }}
       TYPE: ${{ inputs.TYPE }}
       RELEASE: ${{ inputs.RELEASE }}
+      VARIANT: ${{ inputs.VARIANT }}
 
     runs-on: self-hosted
     steps:
@@ -61,6 +71,9 @@ jobs:
           mkdir -p /home/sketu/rising/vendor/lineage-priv/
           cp -r /home/sketu/keys /home/sketu/rising/vendor/lineage-priv/keys/
           bash clone.sh
+
+      - name: Set flags
+        run: bash misc/flags.sh
 
       - name: Build RisingOS
         run: bash build.sh
