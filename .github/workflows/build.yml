@@ -47,31 +47,32 @@ jobs:
       SIGNING: ${{ inputs.SIGNING }}
       TYPE: ${{ inputs.TYPE }}
       RELEASE: ${{ inputs.RELEASE }}
-      GH_TOKEN: ${{ secrets.TOKEN }}
 
     runs-on: self-hosted
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4.1.7
+        uses: actions/checkout@v4
 
-      #- name: Init and Sync
-        #run: sshpass -p "${{ secrets.PASSWORD }}" ssh -o StrictHostKeyChecking=no "${{ env.USER }}@${{ secrets.IP }}" 'cd /home/sketu/rising && bash init.sh'
-        #continue-on-error: true
+      - name: Init and Sync
+        run: bash resync.sh
 
       - name: Clone Repositories
-        run: bash clone.sh
+        run: |
+          mkdir -p /home/sketu/rising/vendor/lineage-priv/
+          cp -r /home/sketu/keys /home/sketu/rising/vendor/lineage-priv/keys/
+          bash clone.sh
 
       - name: Build RisingOS
         run: bash build.sh
             
-      - name: Check and Upload Build Artifacts
-        run: |
-          if [ -s "/home/sketu/rising/out/error.log" ] || [ -s "/home/sketu/rising/out/target/product/${CODENAME}/*${CODENAME}.json" ]; then
-            echo "Uploading build logs..."
-            gh run upload-artifact --name build-logs /home/sketu/rising/out/error.log /home/sketu/rising/out/target/product/${CODENAME}/*${CODENAME}.json
-          else
-            echo "No non-empty files to upload."
-          fi
+      - name: Upload Build Logs and json
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs
+          path: |
+            /home/sketu/rising/out/error.log
+            /home/sketu/rising/out/target/product/*/*${CODENAME}.json
 
       - name: Upload Build Files
         run: bash upload.sh

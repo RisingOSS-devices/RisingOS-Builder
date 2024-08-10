@@ -32,10 +32,11 @@ function get_remote_url {
 function find_repo_with_fallback {
   local repo_name=$1
   local username=$2
+  local remote_name=$3
   local orgs=("RisingOSS-devices" "LineageOS")
   
   if [[ -n "$username" ]]; then
-    repo_url="https://github.com/$username/$repo_name.git"
+    repo_url=$(get_remote_url "$remote_name" "$username/$repo_name")
     if repo_exists "$repo_url"; then
       echo "$repo_url"
       return
@@ -43,7 +44,7 @@ function find_repo_with_fallback {
   fi
 
   for org in "${orgs[@]}"; do
-    local repo_url="https://github.com/$org/$repo_name.git"
+    local repo_url=$(get_remote_url "$remote_name" "$org/$repo_name")
     if repo_exists "$repo_url"; then
       echo "$repo_url"
       return
@@ -86,7 +87,7 @@ function clone_and_check_dependencies {
       username=$(echo "$dependency_repository" | cut -d'/' -f1)
       dependency_repository=$(echo "$dependency_repository" | cut -d'/' -f2-)
     fi
-    local dependency_url=$(find_repo_with_fallback "$dependency_repository" "$username")
+    local dependency_url=$(find_repo_with_fallback "$dependency_repository" "$username" "$remote_name")
     if [[ -z "$dependency_url" ]]; then
       echo "Warning: Failed to find repository $dependency_repository. Continuing with next dependency."
       continue
