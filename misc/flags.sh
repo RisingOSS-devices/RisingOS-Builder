@@ -1,7 +1,5 @@
 #!/bin/bash
 
-cd /home/sketu/rising
-
 if [ -z "$VARIANT" ]; then
     echo "VARIANT environment variable is not set. Please set it to one of: VANILLA, CORE, GAPPS."
     exit 1
@@ -55,7 +53,8 @@ process_file() {
     mv "$tmp_file" "$file"
 }
 
-files=$(find device/$BRAND/$CODENAME -name 'lineage_$CODENAME.mk')
+files=$(find /home/sketu/rising/device/$BRAND/$CODENAME -name "lineage_$CODENAME.mk")
+echo "Edited flags in: $files"
 
 for file in $files; do
     process_file "$file" "$value"
