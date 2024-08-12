@@ -25,6 +25,12 @@ function get_remote_url {
     gitlab)
       echo "https://gitlab.com/$repo.git"
       ;;
+    gitea)
+      echo "https://gitea.com/$repo.git"
+      ;;
+    bitbucket)
+      echo "https://bitbucket.org/$repo.git"
+      ;;
     *)
       echo "https://github.com/$repo.git"
       ;;
