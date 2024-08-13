@@ -78,14 +78,20 @@ jobs:
       - name: Build RisingOS
         run: bash build.sh
             
-      - name: Upload Build Logs and json
+      - name: Upload Error Log
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs
-          path: |
-            /home/sketu/rising/out/error.log
-            /home/sketu/rising/out/target/product/*/*${CODENAME}.json
+          name: error-log
+          path: /home/sketu/rising/out/error.log
+          if-no-files-found: ignore
+
+      - name: Upload Build JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-json
+          path: /home/sketu/rising/out/target/product/*/*${{ inputs.CODENAME }}.json
+          if-no-files-found: ignore
 
       - name: Upload Build Files
         run: bash upload.sh
