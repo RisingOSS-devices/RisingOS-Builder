@@ -45,7 +45,7 @@ on:
           - 'CORE'
           - 'GAPPS'
 
-run-name: "RisingOS Build: ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ inputs.TYPE }}, ${{ inputs.RELEASE }}]"
+run-name: "RisingOS Build for ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ inputs.TYPE }}, ${{ inputs.RELEASE }} & ${{ inputs.VARIANT }}] | SIGNING: ${{ inputs.SIGNING }}"
 
 jobs:
   build:
