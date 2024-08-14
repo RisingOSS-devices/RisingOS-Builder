@@ -17,6 +17,7 @@ process_file() {
     tmp_file=$(mktemp)
     WITH_GMS_handled=false
     TARGET_CORE_GMS_handled=false
+    TARGET_DEFAULT_PIXEL_LAUNCHER_handled=false
     while IFS= read -r line; do
         if [[ "$line" =~ WITH_GMS ]]; then
             WITH_GMS_handled=true
@@ -42,6 +43,11 @@ process_file() {
 
         if [[ "$value" == "GAPPS" && "$line" =~ TARGET_CORE_GMS && "$line" == *"true"* ]]; then
             line="TARGET_CORE_GMS := false"
+        fi
+
+        if [[ "$value" == "VANILLA" && "$line" =~ TARGET_DEFAULT_PIXEL_LAUNCHER ]]; then
+            TARGET_DEFAULT_PIXEL_LAUNCHER_handled=true
+            line="TARGET_DEFAULT_PIXEL_LAUNCHER := false"
         fi
 
         echo "$line" >> "$tmp_file"
