@@ -65,15 +65,10 @@ function find_repo_with_fallback {
 function clone_and_check_dependencies {
   local repo_url=$1
   local dest_dir=$2
-  local recursive_flag=$3
   if [[ -d "$dest_dir" ]]; then
     rm -rf "$dest_dir"
   fi
-  if [[ "$recursive_flag" == "true" ]]; then
-    git clone --recursive "$repo_url" --depth=1 "$dest_dir"
-  else
-    git clone "$repo_url" --depth=1 "$dest_dir"
-  fi
+  git clone "$repo_url" --depth=1 --recursive "$dest_dir"
   if [[ $? -ne 0 ]]; then
     echo "Error: Failed to clone the repository $repo_url."
     exit 1
@@ -97,7 +92,6 @@ function clone_and_check_dependencies {
     local dependency_branch=$(echo "$dependency" | jq -r '.branch // "fourteen"')
     local dependency_target_path=$(echo "$dependency" | jq -r '.target_path')
     local remote_name=$(echo "$dependency" | jq -r '.remote // "github"')
-    local recursive_flag=$(echo "$dependency" | jq -r '.recursive // "false"')
     local username=""
     if [[ "$dependency_repository" == *"/"* ]]; then
       username=$(echo "$dependency_repository" | cut -d'/' -f1)
@@ -105,25 +99,25 @@ function clone_and_check_dependencies {
     fi
     local dependency_url=$(find_repo_with_fallback "$dependency_repository" "$username" "$remote_name")
     if [[ -z "$dependency_url" ]]; then
-      echo "Warning: Failed to find repository $dependency_repository. Continuing with next dependency."
+      echo "Warning: Failed to find Repository $dependency_repository. Continuing with next dependency."
       continue
     fi
-    if ! clone_and_check_dependencies "$dependency_url" "$dependency_target_path" "$recursive_flag"; then
+    if ! clone_and_check_dependencies "$dependency_url" "$dependency_target_path"; then
       echo "Warning: Failed to clone dependency $dependency_url. Continuing with next dependency."
     fi
   done
 }
 
 if repo_exists "$primary_repo_url"; then
-  clone_and_check_dependencies "$primary_repo_url" "device/$BRAND/$CODENAME" "false"
+  clone_and_check_dependencies "$primary_repo_url" "device/$BRAND/$CODENAME"
 else
-  echo "Warning: Device tree not found in RisingOSS-devices ($primary_repo_url). Cloning from LineageOS."
+  echo "Warning: Repository not found in RisingOSS-devices ($primary_repo_url). Cloning from LineageOS."
   if repo_exists "$fallback_repo_url"; then
-    clone_and_check_dependencies "$fallback_repo_url" "device/$BRAND/$CODENAME" "false"
+    clone_and_check_dependencies "$fallback_repo_url" "device/$BRAND/$CODENAME"
   else
-    echo "Error: Neither the primary nor fallback repository exists."
+    echo "Error: Repository doesn't exist in RisingOSS-devices or LineageOS."
     exit 1
   fi
 fi
 
-echo "Setup completed successfully."
+echo "Device dependencies cloned successfully. Starting Build"

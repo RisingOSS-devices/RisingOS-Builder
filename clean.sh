@@ -20,6 +20,10 @@ wipe_cloned_repositories() {
             if [[ -d "$path" ]]; then
                 echo "Removing directory: $path"
                 rm -rf "$path"
+                repo_path=".repo/project/$(basename "$path").git"
+                if [[ -d "$repo_path" ]]; then
+                    rm -rf "$repo_path"
+                fi
             else
                 echo "Directory does not exist: $path"
             fi

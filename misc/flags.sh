@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ -z "$VARIANT" ]; then
-    echo "VARIANT environment variable is not set. Please set it to one of: VANILLA, CORE, GAPPS."
+    echo "Error: The VARIANT environment variable is not set."
     exit 1
 fi
 

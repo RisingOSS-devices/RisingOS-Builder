@@ -9,15 +9,8 @@ fi
 
 cd "$TARGET_DIR"
 
-usage() {
-    echo "Usage: $0"
-    echo "This script checks the RELEASE environment variable and uploads accordingly."
-    exit 1
-}
-
 if [ -z "$RELEASE" ]; then
     echo "Error: The RELEASE environment variable is not set."
-    usage
 fi
 
 case "$RELEASE" in
@@ -30,7 +23,7 @@ case "$RELEASE" in
         upload -sf RisingOS-*.zip boot.img recovery.img
         ;;
     *)
-        echo "Error: Invalid value for RELEASE. Expected 'stable' or 'test'."
+        echo "Error: The RELEASE environment variable is not set."
         exit 1
         ;;
 esac

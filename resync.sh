@@ -4,7 +4,7 @@ WORK_DIR="/home/sketu/rising"
 
 update_repo_tool() {
     cd "$WORK_DIR/.repo/repo"
-    git pull -r
+    git pull -r >/dev/null 2>&1
     cd -
 }
 
@@ -14,7 +14,7 @@ delete_failing_repos() {
         repo_name=$(basename "$repo_info")
         echo "Deleted repository: $repo_info" | tee -a "$WORK_DIR/deleted_repositories.txt"
         rm -rf "$WORK_DIR/$repo_path/$repo_name"
-        rm -rf "$WORK_DIR/.repo/project/$repo_path/$repo_name"/*.git
+        rm -rf "$WORK_DIR/.repo/projects/$repo_path/$repo_name"/*.git
     done <<< "$(awk '/Failing repos:/ {flag=1; next} /Try/ {flag=0} flag' /tmp/output.txt)"
 }
 
@@ -25,13 +25,13 @@ delete_repos_with_uncommitted_changes() {
         repo_name=$(basename "$repo_info")
         echo "Deleted repository: $repo_info" | tee -a "$WORK_DIR/deleted_repositories.txt"
         rm -rf "$WORK_DIR/$repo_path/$repo_name"
-        rm -rf "$WORK_DIR/.repo/project/$repo_path/$repo_name"/*.git
+        rm -rf "$WORK_DIR/.repo/projects/$repo_path/$repo_name"/*.git
     done
 }
 
 sync_repos() {
     find "$WORK_DIR/.repo" -name '*.lock' -delete
-    repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --prune 2>&1 | tee /tmp/output.txt
+    repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --prune | tee /tmp/output.txt
 }
 
 init_repo() {
@@ -39,14 +39,14 @@ init_repo() {
 }
 
 main() {
-    cd "$WORK_DIR" || exit 1
+    cd "$WORK_DIR" >/dev/null 2>&1 || exit 1
 
     update_repo_tool
 
     sync_repos
 
     if ! grep -qe "Failing repos:\|uncommitted changes are present" /tmp/output.txt; then
-        echo "All repositories synchronized successfully."
+        echo "All repositories synchronized. Starting tree cloning."
         rm -f "$WORK_DIR/deleted_repositories.txt"
         exit 0
     fi

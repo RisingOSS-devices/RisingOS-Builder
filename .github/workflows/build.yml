@@ -79,19 +79,18 @@ jobs:
         run: bash build.sh
             
       - name: Upload Error Log
-        if: always()
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
           name: error-log
           path: /home/sketu/rising/out/error.log
-          if-no-files-found: ignore
 
       - name: Upload Build JSON
+        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: build-json
           path: /home/sketu/rising/out/target/product/*/*${{ inputs.CODENAME }}.json
-          if-no-files-found: ignore
 
       - name: Upload Build Files
         run: bash upload.sh
