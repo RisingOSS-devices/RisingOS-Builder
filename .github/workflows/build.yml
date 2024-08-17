@@ -45,10 +45,59 @@ on:
           - 'CORE'
           - 'GAPPS'
 
-run-name: "RisingOS Build for ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ inputs.TYPE }}, ${{ inputs.RELEASE }} & ${{ inputs.VARIANT }}] | SIGNING: ${{ inputs.SIGNING }}"
+run-name: "RisingOS Build for ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ inputs.TYPE }}, ${{ inputs.RELEASE }} & ${{ inputs.VARIANT }}]"
 
 jobs:
+  check-limit:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Check Builds limit
+        id: check_limit
+        run: |
+          COUNTER_FILE=".github/workflow_counter.json"
+          CURRENT_DATE=$(date +%Y-%m-%d)
+          USER=${{ github.actor }}
+
+          if [[ ! -f "$COUNTER_FILE" ]] || ! jq empty "$COUNTER_FILE" 2>/dev/null; then
+            echo '{}' > "$COUNTER_FILE"
+          fi
+
+          TODAY_RUNS=$(jq -r --arg user "$USER" --arg date "$CURRENT_DATE" \
+            'if .[$user][$date] then .[$user][$date] else 0 end' "$COUNTER_FILE")
+
+          if [[ ! "$TODAY_RUNS" =~ ^[0-9]+$ ]]; then
+            TODAY_RUNS=0
+          fi
+
+          echo "Today's runs: $TODAY_RUNS"
+
+          if [[ "$TODAY_RUNS" -ge 3 && "${{ env.is_owner }}" == "false" ]]; then
+            echo "User $USER has reached the daily limit of 3 workflow runs."
+            exit 1
+          fi
+
+          NEW_RUNS=$((TODAY_RUNS + 1))
+          jq --arg user "$USER" --arg date "$CURRENT_DATE" --argjson runs "$NEW_RUNS" \
+            '.[$user][$date] = $runs' "$COUNTER_FILE" > tmp.json && mv tmp.json "$COUNTER_FILE"
+
+          echo "Updated run count: $NEW_RUNS"
+
+      - name: Commit and push counter update
+        run: |
+          COUNTER_FILE=".github/workflow_counter.json"
+          git config --global user.email "actions@github.com"
+          git config --global user.name "GitHub Actions"
+          git add $COUNTER_FILE
+          git commit -m "Update workflow run count for @${{ github.actor }}"
+          git push
+        if: steps.check_limit.outcome == 'success'
+
   build:
+    needs: check-limit
+    runs-on: self-hosted
     env:
       USER: sketu
       BRAND: ${{ inputs.BRAND }}
@@ -58,7 +107,6 @@ jobs:
       RELEASE: ${{ inputs.RELEASE }}
       VARIANT: ${{ inputs.VARIANT }}
 
-    runs-on: self-hosted
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
