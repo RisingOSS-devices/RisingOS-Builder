@@ -45,6 +45,11 @@ on:
           - 'CORE'
           - 'GAPPS'
 
+permissions:
+  actions: write
+  contents: write
+  statuses: write
+
 run-name: "RisingOS Build for ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ inputs.TYPE }}, ${{ inputs.RELEASE }} & ${{ inputs.VARIANT }}]"
 
 jobs:
