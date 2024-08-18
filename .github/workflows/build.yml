@@ -59,6 +59,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Get User Role
+        id: get_role
+        run: |
+          OWNERS=$(gh api -H "Accept: application/vnd.github+json" /orgs/RisingOSS-devices/members?role=admin --jq '.[].login')
+          if echo "$OWNERS" | grep -q "${{ github.actor }}"; then
+            echo "is_owner=true" >> $GITHUB_ENV
+          else
+            echo "is_owner=false" >> $GITHUB_ENV
+          fi
+
       - name: Check Builds limit
         id: check_limit
         run: |
@@ -79,9 +89,11 @@ jobs:
 
           echo "Today's runs: $TODAY_RUNS"
 
-          if [[ "$TODAY_RUNS" -ge 3 && "${{ env.is_owner }}" == "false" ]]; then
-            echo "User $USER has reached the daily limit of 3 workflow runs."
-            exit 1
+          if [[ "${{ env.is_owner }}" == "false" ]]; then
+            if [[ "$TODAY_RUNS" -ge 3 ]]; then
+              echo "User $USER has reached the daily limit of 3 workflow runs."
+              exit 1
+            fi
           fi
 
           NEW_RUNS=$((TODAY_RUNS + 1))
