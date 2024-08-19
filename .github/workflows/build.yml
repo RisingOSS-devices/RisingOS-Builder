@@ -61,6 +61,8 @@ jobs:
 
       - name: Get User Role
         id: get_role
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           OWNERS=$(gh api -H "Accept: application/vnd.github+json" /orgs/RisingOSS-devices/members?role=admin --jq '.[].login')
           if echo "$OWNERS" | grep -q "${{ github.actor }}"; then
