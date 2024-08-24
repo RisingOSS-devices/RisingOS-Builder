@@ -35,7 +35,7 @@ sync_repos() {
 }
 
 init_repo() {
-    repo init -u https://github.com/RisingOS-staging/android -b fourteen --git-lfs --depth=1
+    repo init -u https://github.com/RisingTechOSS/android -b fourteen --git-lfs --depth=1
 }
 
 main() {
