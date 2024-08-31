@@ -55,6 +55,8 @@ run-name: "RisingOS Build for ${{ inputs.BRAND }} ${{ inputs.CODENAME }} [${{ in
 jobs:
   check-limit:
     runs-on: ubuntu-latest
+    outputs:
+      staging: ${{ steps.get_role.outputs.is_staging_member }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -65,13 +67,34 @@ jobs:
           GH_TOKEN: ${{ secrets.TOKEN }}
         run: |
           OWNERS=$(gh api -H "Accept: application/vnd.github+json" /orgs/RisingOSS-devices/members?role=admin --jq '.[].login')
+          STAGING_MEMBERS=$(gh api -H "Accept: application/vnd.github+json" /orgs/RisingOS-staging/members --jq '.[].login')
+          DEVICES_MEMBERS=$(gh api -H "Accept: application/vnd.github+json" /orgs/RisingOSS-devices/members --jq '.[].login')
+
           if echo "$OWNERS" | grep -q "${{ github.actor }}"; then
             echo "is_owner=true" >> $GITHUB_ENV
+            echo "is_owner=true" >> $GITHUB_OUTPUT
           else
             echo "is_owner=false" >> $GITHUB_ENV
+            echo "is_owner=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Check Builds limit
+          if echo "$STAGING_MEMBERS" | grep -q "${{ github.actor }}"; then
+            echo "is_staging_member=true" >> $GITHUB_ENV
+            echo "is_staging_member=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_staging_member=false" >> $GITHUB_ENV
+            echo "is_staging_member=false" >> $GITHUB_OUTPUT
+          fi
+
+          if echo "$DEVICES_MEMBERS" | grep -q "${{ github.actor }}"; then
+            echo "is_devices_member=true" >> $GITHUB_ENV
+            echo "is_devices_member=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_devices_member=false" >> $GITHUB_ENV
+            echo "is_devices_member=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Check Builds Limit
         id: check_limit
         run: |
           COUNTER_FILE=".github/workflow_counter.json"
@@ -91,11 +114,17 @@ jobs:
 
           echo "Today's runs: $TODAY_RUNS"
 
-          if [[ "${{ env.is_owner }}" == "false" ]]; then
-            if [[ "$TODAY_RUNS" -ge 3 ]]; then
-              echo "User $USER has reached the daily limit of 3 workflow runs."
-              exit 1
-            fi
+          if [[ "${{ env.is_owner }}" == "true" && "${{ env.is_staging_member }}" == "false" ]]; then
+            LIMIT=-1
+          elif [[ "${{ env.is_devices_member }}" == "true" && "${{ env.is_staging_member }}" == "true" ]]; then
+            LIMIT=5
+          else
+            LIMIT=3
+          fi
+
+          if [[ $LIMIT -ne -1 && "$TODAY_RUNS" -ge $LIMIT ]]; then
+            echo "User $USER has reached the daily limit of $LIMIT workflow runs."
+            exit 1
           fi
 
           NEW_RUNS=$((TODAY_RUNS + 1))
@@ -125,13 +154,18 @@ jobs:
       TYPE: ${{ inputs.TYPE }}
       RELEASE: ${{ inputs.RELEASE }}
       VARIANT: ${{ inputs.VARIANT }}
+      STAGING: ${{ needs.check-limit.outputs.staging }}
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
       - name: Init and Sync
-        run: bash resync.sh
+        run: |
+          if [[ "${{ env.STAGING }}" == "true" ]]; then
+            echo "User is from the staging organization."
+          fi
+          bash resync.sh
 
       - name: Clone Repositories
         run: |

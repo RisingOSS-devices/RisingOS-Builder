@@ -1,73 +1,78 @@
 #!/bin/bash
 
-WORK_DIR="/home/sketu/rising"
+set -e
+
+WORKDIR="/home/sketu/rising"
+OUTPUT_FILE="/tmp/repo_sync_output.txt"
+DELETED_REPOS_FILE="$WORKDIR/deleted_repositories.txt"
+
+log() {
+    echo "$1" | tee -a "$OUTPUT_FILE"
+}
 
 update_repo_tool() {
-    cd "$WORK_DIR/.repo/repo"
-    git pull -r >/dev/null 2>&1
-    cd -
+    log "Updating repo tool..."
+    (cd "$WORKDIR/.repo/repo" && git pull -r) >/dev/null 2>&1
+}
+
+delete_repo() {
+    local repo_info="$1"
+    local repo_path=$(dirname "$repo_info")
+    local repo_name=$(basename "$repo_info")
+    log "Deleting repository: $repo_info"
+    echo "$repo_info" >> "$DELETED_REPOS_FILE"
+    rm -rf "$WORKDIR/$repo_path/$repo_name" "$WORKDIR/.repo/projects/$repo_path/$repo_name"/*.git
 }
 
 delete_failing_repos() {
-    while IFS= read -r repo_info; do
-        repo_path=$(dirname "$repo_info")
-        repo_name=$(basename "$repo_info")
-        echo "Deleted repository: $repo_info" | tee -a "$WORK_DIR/deleted_repositories.txt"
-        rm -rf "$WORK_DIR/$repo_path/$repo_name"
-        rm -rf "$WORK_DIR/.repo/projects/$repo_path/$repo_name"/*.git
-    done <<< "$(awk '/Failing repos:/ {flag=1; next} /Try/ {flag=0} flag' /tmp/output.txt)"
-}
-
-delete_repos_with_uncommitted_changes() {
-    grep 'uncommitted changes are present' /tmp/output.txt | while IFS= read -r line; do
-        repo_info=$(echo "$line" | awk -F': ' '{print $2}')
-        repo_path=$(dirname "$repo_info")
-        repo_name=$(basename "$repo_info")
-        echo "Deleted repository: $repo_info" | tee -a "$WORK_DIR/deleted_repositories.txt"
-        rm -rf "$WORK_DIR/$repo_path/$repo_name"
-        rm -rf "$WORK_DIR/.repo/projects/$repo_path/$repo_name"/*.git
+    log "Deleting failing repositories..."
+    awk '/Failing repos:/{flag=1; next} /Try/{flag=0} flag' "$OUTPUT_FILE" | while read -r repo_info; do
+        delete_repo "$repo_info"
     done
 }
 
 sync_repos() {
-    find "$WORK_DIR/.repo" -name '*.lock' -delete
-    repo sync -c -j$(nproc --all) --force-sync --no-clone-bundle --no-tags --prune | tee /tmp/output.txt
+    log "Syncing repositories..."
+    find "$WORKDIR/.repo" -name '*.lock' -delete
+    repo sync -c -j"$(nproc --all)" --force-sync --no-clone-bundle --no-tags --prune | tee -a "$OUTPUT_FILE"
 }
 
 init_repo() {
-    repo init -u https://github.com/RisingTechOSS/android -b fourteen --git-lfs --depth=1
+    local init_url="https://github.com/RisingTechOSS/android"
+    if [[ "${STAGING}" == "true" ]]; then
+        init_url="https://github.com/RisingOS-staging/android"
+        log "Initializing repo with the Staging Source"
+    else
+        log "Initializing repo with the Stable Source"
+    fi
+    repo init -u "$init_url" -b fourteen --git-lfs --depth=1 | tee -a "$OUTPUT_FILE"
 }
 
 main() {
-    cd "$WORK_DIR" >/dev/null 2>&1 || exit 1
+    cd "$WORKDIR" || exit 1
+    : > "$OUTPUT_FILE"
+    rm -f "$DELETED_REPOS_FILE"
 
     update_repo_tool
-
     sync_repos
 
-    if ! grep -qe "Failing repos:\|uncommitted changes are present" /tmp/output.txt; then
-        echo "All repositories synchronized. Starting tree cloning."
-        rm -f "$WORK_DIR/deleted_repositories.txt"
+    if ! grep -q "Failing repos:" "$OUTPUT_FILE"; then
+        log "All repositories synchronized successfully."
         exit 0
     fi
 
-    rm -f "$WORK_DIR/deleted_repositories.txt"
+    delete_failing_repos
 
-    if grep -q "Failing repos:" /tmp/output.txt; then
-        echo "Deleting failing repositories..."
-        delete_failing_repos
-    fi
-
-    if grep -q "uncommitted changes are present" /tmp/output.txt; then
-        echo "Deleting repositories with uncommitted changes..."
-        delete_repos_with_uncommitted_changes
-    fi
-
-    echo "Initializing and re-syncing all repositories..."
+    log "Reinitializing and re-syncing all repositories..."
     init_repo
     sync_repos
 
-    rm -f "$WORK_DIR/deleted_repositories.txt"
+    if [[ -f "$DELETED_REPOS_FILE" ]]; then
+        log "The following repositories were deleted:"
+        cat "$DELETED_REPOS_FILE"
+    else
+        log "No repositories were deleted during this sync."
+    fi
 }
 
 main "$@"
