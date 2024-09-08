@@ -1,10 +1,12 @@
 #!/bin/bash
 
-set -e
+set -euo pipefail
 
 WORKDIR="/home/sketu/rising"
 OUTPUT_FILE="/tmp/repo_sync_output.txt"
 DELETED_REPOS_FILE="$WORKDIR/deleted_repositories.txt"
+STABLE_REPO_URL="https://github.com/RisingTechOSS/android"
+STAGING_REPO_URL="https://github.com/RisingOS-staging/android"
 
 log() {
     echo "$1" | tee -a "$OUTPUT_FILE"
@@ -38,14 +40,16 @@ sync_repos() {
 }
 
 init_repo() {
-    local init_url="https://github.com/RisingTechOSS/android"
-    if [[ "${STAGING}" == "true" ]]; then
-        init_url="https://github.com/RisingOS-staging/android"
+    local init_url="$STABLE_REPO_URL"
+    if [[ "${STAGING:-false}" == "true" && "${RELEASE:-}" != "stable" ]]; then
+        init_url="$STAGING_REPO_URL"
         log "Initializing repo with the Staging Source"
     else
         log "Initializing repo with the Stable Source"
     fi
-    repo init -u "$init_url" -b fourteen --git-lfs --depth=1 | tee -a "$OUTPUT_FILE"
+
+    log "Running repo init with URL: $init_url"
+    repo init -u "$init_url" -b fourteen --git-lfs --depth=1 2>&1 | tee -a "$OUTPUT_FILE"
 }
 
 main() {

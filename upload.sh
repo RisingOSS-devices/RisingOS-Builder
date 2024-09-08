@@ -15,7 +15,7 @@ upload_to_drive() {
 upload_to_sourceforge() {
     local file="$1"
     echo "Attempting to upload $file to SourceForge..."
-    sshpass -p "$SF_PASSWORD" rsync -avP -e "ssh -o StrictHostKeyChecking=no" "$file" $USERNAME@$SF_HOST:/home/frs/project/$PROJECT/$CODENAME/
+    sshpass -p "$SF_PASSWORD" rsync -avP -e "ssh -o StrictHostKeyChecking=no" "$file" $SF_USERNAME@$SF_HOST:/home/frs/project/$PROJECT/$CODENAME/
     if [ $? -eq 0 ]; then
         echo "Uploaded $file to SourceForge successfully."
     else

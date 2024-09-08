@@ -155,6 +155,10 @@ jobs:
       RELEASE: ${{ inputs.RELEASE }}
       VARIANT: ${{ inputs.VARIANT }}
       STAGING: ${{ needs.check-limit.outputs.staging }}
+      PROJECT: ${{ secrets.PROJECT }}
+      SF_HOST: ${{ secrets.SF_HOST }}
+      SF_USERNAME: ${{ secrets.SF_USERNAME }}
+      SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
 
     steps:
       - name: Checkout code
@@ -163,7 +167,7 @@ jobs:
       - name: Init and Sync
         run: |
           if [[ "${{ env.STAGING }}" == "true" ]]; then
-            echo "User is from the staging organization."
+            echo "User is from staging."
           fi
           bash resync.sh
 

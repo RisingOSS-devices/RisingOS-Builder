@@ -3,12 +3,14 @@ set -e
 
 cd /home/sketu/rising
 
-rm -rf out/error*.log
-rm -rf out/target/product/$CODENAME
 rm -rf .repo/local_manifests
 rm -rf .repo/projects/device/$BRAND
 rm -rf .repo/projects/vendor/$BRAND
+rm -rf .repo/projects/vendor/risingOTA.git
 rm -rf .repo/projects/kernel/$BRAND
+rm -rf out/error*.log
+rm -rf out/target/product/$CODENAME
+rm -rf vendor/risingOTA
 rm -rf vendor/lineage-priv/keys/
 
 wipe_cloned_repositories() {
