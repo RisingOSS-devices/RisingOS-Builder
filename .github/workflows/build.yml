@@ -165,11 +165,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Init and Sync
-        run: |
-          if [[ "${{ env.STAGING }}" == "true" ]]; then
-            echo "User is from staging."
-          fi
-          bash resync.sh
+        run: bash resync.sh
 
       - name: Clone Repositories
         run: |
