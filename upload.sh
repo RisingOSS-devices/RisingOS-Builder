@@ -15,7 +15,7 @@ upload_to_drive() {
 upload_to_sourceforge() {
     local file="$1"
     echo "Attempting to upload $file to SourceForge..."
-    sshpass -p "$SF_PASSWORD" rsync -avP -e "ssh -o StrictHostKeyChecking=no" "$file" $SF_USERNAME@$SF_HOST:/home/frs/project/$PROJECT/$CODENAME/
+    sshpass -p "$SF_PASSWORD" rsync -avP -e "ssh -o StrictHostKeyChecking=no" "$file" $SF_USERNAME@$SF_HOST:/home/frs/project/risingos-test/$CODENAME/
     if [ $? -eq 0 ]; then
         echo "Uploaded $file to SourceForge successfully."
     else
@@ -78,7 +78,7 @@ case $DESTINATION in
             upload_to_sourceforge "$FILE" || exit 1
         done
         echo "All uploads to SourceForge completed."
-        echo "Uploaded to here: https://sourceforge.net/projects/$PROJECT/files/$CODENAME"
+        echo "Uploaded to here: https://sourceforge.net/projects/risingos-test/files/$CODENAME"
         ;;
     *)
         echo "Error: Invalid destination '$DESTINATION'."

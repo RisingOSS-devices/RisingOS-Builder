@@ -1,67 +1,66 @@
 #!/bin/bash
 
-if [ -z "$VARIANT" ]; then
-    echo "Error: The VARIANT environment variable is not set."
-    exit 1
-fi
-
-value=$(echo "$VARIANT" | tr '[:lower:]' '[:upper:]')
-
-if [[ "$value" != "VANILLA" && "$value" != "CORE" && "$value" != "GAPPS" ]]; then
-    exit 1
-fi
-
+VARIANT=$(echo "$VARIANT" | tr '[:lower:]' '[:upper:]')
 process_file() {
     local file="$1"
-    local value="$2"
-    tmp_file=$(mktemp)
-    WITH_GMS_handled=false
-    TARGET_CORE_GMS_handled=false
-    TARGET_DEFAULT_PIXEL_LAUNCHER_handled=false
+    local tmp_file=$(mktemp)
+    local with_gms_found=false
+    local target_core_gms_found=false
+    local target_default_pixel_launcher_found=false
+    local changes_made=false
+
     while IFS= read -r line; do
         if [[ "$line" =~ WITH_GMS ]]; then
-            WITH_GMS_handled=true
-            case $value in
-                VANILLA)
-                    line="${line/true/false}"
-                    ;;
-                CORE)
-                    if [[ "$line" == *"false"* ]]; then
-                        line="${line/false/true}"
-                    fi
-                    ;;
-                GAPPS)
-                    line="${line/false/true}"
-                    ;;
-            esac
+            with_gms_found=true
+            new_line="WITH_GMS := $([ "$VARIANT" != "VANILLA" ] && echo "true" || echo "false")"
+            if [ "$line" != "$new_line" ]; then
+                line="$new_line"
+                changes_made=true
+            fi
+        elif [[ "$line" =~ TARGET_CORE_GMS ]]; then
+            target_core_gms_found=true
+            new_line="TARGET_CORE_GMS := $([ "$VARIANT" == "CORE" ] && echo "true" || echo "false")"
+            if [ "$line" != "$new_line" ]; then
+                line="$new_line"
+                changes_made=true
+            fi
+        elif [[ "$line" =~ TARGET_DEFAULT_PIXEL_LAUNCHER ]]; then
+            target_default_pixel_launcher_found=true
+            if [ "$VARIANT" == "VANILLA" ]; then
+                new_line="TARGET_DEFAULT_PIXEL_LAUNCHER := false"
+                if [ "$line" != "$new_line" ]; then
+                    line="$new_line"
+                    changes_made=true
+                fi
+            fi
         fi
-
-        if [[ "$value" == "CORE" && "$line" =~ TARGET_CORE_GMS ]]; then
-            TARGET_CORE_GMS_handled=true
-            line="TARGET_CORE_GMS := true"
-        fi
-
-        if [[ "$value" == "GAPPS" && "$line" =~ TARGET_CORE_GMS && "$line" == *"true"* ]]; then
-            line="TARGET_CORE_GMS := false"
-        fi
-
-        if [[ "$value" == "VANILLA" && "$line" =~ TARGET_DEFAULT_PIXEL_LAUNCHER ]]; then
-            TARGET_DEFAULT_PIXEL_LAUNCHER_handled=true
-            line="TARGET_DEFAULT_PIXEL_LAUNCHER := false"
-        fi
-
         echo "$line" >> "$tmp_file"
     done < "$file"
-    if [[ "$value" == "VANILLA" && "$WITH_GMS_handled" == "false" ]]; then
-        rm "$tmp_file"
-        return
+
+    if [ "$VARIANT" == "CORE" ]; then
+        if [ "$with_gms_found" = false ]; then
+            echo "WITH_GMS := true" >> "$tmp_file"
+            changes_made=true
+        fi
+        if [ "$target_core_gms_found" = false ]; then
+            echo "TARGET_CORE_GMS := true" >> "$tmp_file"
+            changes_made=true
+        fi
+    elif [ "$VARIANT" == "GAPPS" ] && [ "$with_gms_found" = false ]; then
+        echo "WITH_GMS := true" >> "$tmp_file"
+        changes_made=true
     fi
-    mv "$tmp_file" "$file"
+
+    if [ "$changes_made" = true ]; then
+        mv "$tmp_file" "$file"
+        echo "Modified: $file"
+        echo "  - Updated flags for $VARIANT Build"
+    else
+        rm "$tmp_file"
+        echo "No changes needed for: $file"
+    fi
 }
 
-files=$(find /home/sketu/rising/device/$BRAND/$CODENAME -name "lineage_$CODENAME.mk")
-echo "Edited flags in: $files"
-
-for file in $files; do
-    process_file "$file" "$value"
+find "/home/sketu/test/device/$BRAND/$CODENAME" -name "lineage_$CODENAME.mk" | while read -r file; do
+    process_file "$file"
 done
