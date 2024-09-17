@@ -158,6 +158,7 @@ jobs:
       SF_HOST: ${{ secrets.SF_HOST }}
       SF_USERNAME: ${{ secrets.SF_USERNAME }}
       SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+      GIT_USER: ${{ github.actor }}
 
     steps:
       - name: Checkout code
