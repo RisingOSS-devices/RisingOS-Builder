@@ -1,55 +1,41 @@
 #!/bin/bash
 
 VARIANT=$(echo "$VARIANT" | tr '[:lower:]' '[:upper:]')
+update_flag() {
+    local flag="$1"
+    local value="$2"
+    local line="$flag := $value"
+    if ! grep -q "$flag" "$tmp_file"; then
+        echo "$line" >> "$tmp_file"
+        changes_made=true
+    elif ! grep -q "$line" "$tmp_file"; then
+        sed -i "s/^$flag :=.*/$line/" "$tmp_file"
+        changes_made=true
+    fi
+}
+
 process_file() {
     local file="$1"
     local tmp_file=$(mktemp)
-    local with_gms_found=false
-    local target_core_gms_found=false
-    local target_default_pixel_launcher_found=false
     local changes_made=false
 
-    while IFS= read -r line; do
-        if [[ "$line" =~ WITH_GMS ]]; then
-            with_gms_found=true
-            new_line="WITH_GMS := $([ "$VARIANT" != "VANILLA" ] && echo "true" || echo "false")"
-            if [ "$line" != "$new_line" ]; then
-                line="$new_line"
-                changes_made=true
-            fi
-        elif [[ "$line" =~ TARGET_CORE_GMS ]]; then
-            target_core_gms_found=true
-            new_line="TARGET_CORE_GMS := $([ "$VARIANT" == "CORE" ] && echo "true" || echo "false")"
-            if [ "$line" != "$new_line" ]; then
-                line="$new_line"
-                changes_made=true
-            fi
-        elif [[ "$line" =~ TARGET_DEFAULT_PIXEL_LAUNCHER ]]; then
-            target_default_pixel_launcher_found=true
-            if [ "$VARIANT" == "VANILLA" ]; then
-                new_line="TARGET_DEFAULT_PIXEL_LAUNCHER := false"
-                if [ "$line" != "$new_line" ]; then
-                    line="$new_line"
-                    changes_made=true
-                fi
-            fi
-        fi
-        echo "$line" >> "$tmp_file"
-    done < "$file"
+    cp "$file" "$tmp_file"
 
-    if [ "$VARIANT" == "CORE" ]; then
-        if [ "$with_gms_found" = false ]; then
-            echo "WITH_GMS := true" >> "$tmp_file"
-            changes_made=true
-        fi
-        if [ "$target_core_gms_found" = false ]; then
-            echo "TARGET_CORE_GMS := true" >> "$tmp_file"
-            changes_made=true
-        fi
-    elif [ "$VARIANT" == "GAPPS" ] && [ "$with_gms_found" = false ]; then
-        echo "WITH_GMS := true" >> "$tmp_file"
-        changes_made=true
-    fi
+    case "$VARIANT" in
+        VANILLA)
+            update_flag "WITH_GMS" "false"
+            update_flag "TARGET_CORE_GMS" "false"
+            update_flag "TARGET_DEFAULT_PIXEL_LAUNCHER" "false"
+            ;;
+        CORE)
+            update_flag "WITH_GMS" "true"
+            update_flag "TARGET_CORE_GMS" "true"
+            ;;
+        GAPPS)
+            update_flag "WITH_GMS" "true"
+            update_flag "TARGET_CORE_GMS" "false"
+            ;;
+    esac
 
     if [ "$changes_made" = true ]; then
         mv "$tmp_file" "$file"

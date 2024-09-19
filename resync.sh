@@ -58,15 +58,7 @@ delete_failing_repos() {
     fi
 }
 
-main() {
-    cd "$WORKDIR" || exit 1
-    
-    : > "$OUTPUT_FILE"
-    rm -f "$DELETED_REPOS_FILE"
-
-    update_repo_tool
-    init_repo
-
+perform_sync() {
     if ! sync_repos; then
         delete_failing_repos
         log "Re-attempting sync after deleting failing repositories"
@@ -75,6 +67,17 @@ main() {
             exit 1
         fi
     fi
+}
+
+main() {
+    cd "$WORKDIR" || exit 1
+    
+    : > "$OUTPUT_FILE"
+    rm -f "$DELETED_REPOS_FILE"
+
+    update_repo_tool
+    init_repo
+    perform_sync
 
     if [ -f "$DELETED_REPOS_FILE" ]; then
         log "The following repositories were deleted:"
