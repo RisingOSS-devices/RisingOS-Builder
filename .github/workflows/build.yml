@@ -70,29 +70,17 @@ jobs:
           STAGING_MEMBERS=$(gh api -H "Accept: application/vnd.github+json" /orgs/RisingOS-staging/members --jq '.[].login')
           DEVICES_MEMBERS=$(gh api -H "Accept: application/vnd.github+json" /orgs/RisingOSS-devices/members --jq '.[].login')
 
-          if echo "$OWNERS" | grep -q "${{ github.actor }}"; then
-            echo "is_owner=true" >> $GITHUB_ENV
-            echo "is_owner=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_owner=false" >> $GITHUB_ENV
-            echo "is_owner=false" >> $GITHUB_OUTPUT
-          fi
+          is_owner=$(echo "$OWNERS" | grep -q "${{ github.actor }}" && echo "true" || echo "false")
+          is_staging_member=$(echo "$STAGING_MEMBERS" | grep -q "${{ github.actor }}" && echo "true" || echo "false")
+          is_devices_member=$(echo "$DEVICES_MEMBERS" | grep -q "${{ github.actor }}" && echo "true" || echo "false")
 
-          if echo "$STAGING_MEMBERS" | grep -q "${{ github.actor }}"; then
-            echo "is_staging_member=true" >> $GITHUB_ENV
-            echo "is_staging_member=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_staging_member=false" >> $GITHUB_ENV
-            echo "is_staging_member=false" >> $GITHUB_OUTPUT
-          fi
+          echo "is_owner=$is_owner" >> $GITHUB_ENV
+          echo "is_staging_member=$is_staging_member" >> $GITHUB_ENV
+          echo "is_devices_member=$is_devices_member" >> $GITHUB_ENV
 
-          if echo "$DEVICES_MEMBERS" | grep -q "${{ github.actor }}"; then
-            echo "is_devices_member=true" >> $GITHUB_ENV
-            echo "is_devices_member=true" >> $GITHUB_OUTPUT
-          else
-            echo "is_devices_member=false" >> $GITHUB_ENV
-            echo "is_devices_member=false" >> $GITHUB_OUTPUT
-          fi
+          echo "is_owner=$is_owner" >> $GITHUB_OUTPUT
+          echo "is_staging_member=$is_staging_member" >> $GITHUB_OUTPUT
+          echo "is_devices_member=$is_devices_member" >> $GITHUB_OUTPUT
 
       - name: Check Builds Limit
         id: check_limit
@@ -114,9 +102,9 @@ jobs:
 
           echo "Today's runs: $TODAY_RUNS"
 
-          if [[ "${{ env.is_owner }}" == "true" && "${{ env.is_staging_member }}" == "false" ]]; then
+          if [[ "${{ env.is_owner }}" == "true" ]]; then
             LIMIT=-1
-          elif [[ "${{ env.is_devices_member }}" == "true" && "${{ env.is_staging_member }}" == "true" ]]; then
+          elif [[ "${{ env.is_staging_member }}" == "true" ]]; then
             LIMIT=5
           else
             LIMIT=3
