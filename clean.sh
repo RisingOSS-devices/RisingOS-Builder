@@ -3,23 +3,15 @@ set -e
 
 cd /home/sketu/rising
 
-remove_directories() {
-    local dirs=(
-        ".repo/local_manifests"
-        ".repo/projects/device/$BRAND"
-        ".repo/projects/vendor/$BRAND"
-        ".repo/projects/vendor/risingOTA.git"
-        ".repo/projects/kernel/$BRAND"
-        "out/error*.log"
-        "out/target/product/$CODENAME"
-        "vendor/risingOTA"
-        "vendor/lineage-priv/keys/"
-    )
-
-    for dir in "${dirs[@]}"; do
-        rm -rf "$dir"
-    done
-}
+rm -rf .repo/local_manifests
+rm -rf .repo/projects/device/$BRAND
+rm -rf .repo/projects/vendor/$BRAND
+rm -rf .repo/projects/vendor/risingOTA.git
+rm -rf .repo/projects/kernel/$BRAND
+rm -rf out/error*.log
+rm -rf out/target/product/$CODENAME
+rm -rf vendor/risingOTA
+rm -rf vendor/lineage-priv/keys/
 
 wipe_cloned_repositories() {
     local repositories_file="cloned_repositories.txt"
@@ -31,7 +23,9 @@ wipe_cloned_repositories() {
                 echo "Removing directory: $path"
                 rm -rf "$path"
                 repo_path=".repo/project/$(basename "$path").git"
-                [[ -d "$repo_path" ]] && rm -rf "$repo_path"
+                if [[ -d "$repo_path" ]]; then
+                    rm -rf "$repo_path"
+                fi
             else
                 echo "Directory does not exist: $path"
             fi
@@ -41,6 +35,5 @@ wipe_cloned_repositories() {
     fi
 }
 
-remove_directories
 wipe_cloned_repositories
 rm -rf cloned_repositories.txt
