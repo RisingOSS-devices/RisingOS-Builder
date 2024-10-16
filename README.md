@@ -30,7 +30,8 @@ To start using RisingOS-Builder, follow these steps:
 
 ## Note
 
-- **Do not add `vendorsetup.sh`:** Ensure that all necessary components are included in the `dependencies` file instead of using `vendorsetup.sh`.
+- **Do not add `vendorsetup.sh`:** Include all necessary components in the `dependencies` file.
+- **Build Limits:** Normal maintainers are limited to 3 builds per device, while those with staging source access have 5. Organization owners have unlimited builds.
 
 ## Credits
 

@@ -87,20 +87,20 @@ jobs:
         run: |
           COUNTER_FILE=".github/workflow_counter.json"
           CURRENT_DATE=$(date +%Y-%m-%d)
-          USER=${{ github.actor }}
+          DEVICE=${{ inputs.CODENAME }}
 
           if [[ ! -f "$COUNTER_FILE" ]] || ! jq empty "$COUNTER_FILE" 2>/dev/null; then
             echo '{}' > "$COUNTER_FILE"
           fi
 
-          TODAY_RUNS=$(jq -r --arg user "$USER" --arg date "$CURRENT_DATE" \
-            'if .[$user][$date] then .[$user][$date] else 0 end' "$COUNTER_FILE")
+          TODAY_RUNS=$(jq -r --arg device "$DEVICE" --arg date "$CURRENT_DATE" \
+            'if .[$device][$date] then .[$device][$date] else 0 end' "$COUNTER_FILE")
 
           if [[ ! "$TODAY_RUNS" =~ ^[0-9]+$ ]]; then
             TODAY_RUNS=0
           fi
 
-          echo "Today's runs: $TODAY_RUNS"
+          echo "Today's runs for device $DEVICE: $TODAY_RUNS"
 
           if [[ "${{ env.is_owner }}" == "true" ]]; then
             LIMIT=-1
@@ -111,15 +111,15 @@ jobs:
           fi
 
           if [[ $LIMIT -ne -1 && "$TODAY_RUNS" -ge $LIMIT ]]; then
-            echo "User $USER has reached the daily limit of $LIMIT workflow runs."
+            echo "Device $DEVICE has reached the daily limit of $LIMIT workflow runs."
             exit 1
           fi
 
           NEW_RUNS=$((TODAY_RUNS + 1))
-          jq --arg user "$USER" --arg date "$CURRENT_DATE" --argjson runs "$NEW_RUNS" \
-            '.[$user][$date] = $runs' "$COUNTER_FILE" > tmp.json && mv tmp.json "$COUNTER_FILE"
+          jq --arg device "$DEVICE" --arg date "$CURRENT_DATE" --argjson runs "$NEW_RUNS" \
+            'del(.[$device]) | .[$device][$date] = $runs' "$COUNTER_FILE" > tmp.json && mv tmp.json "$COUNTER_FILE"
 
-          echo "Updated run count: $NEW_RUNS"
+          echo "Updated run count for device $DEVICE: $NEW_RUNS"
 
       - name: Commit and push counter update
         run: |
@@ -127,7 +127,7 @@ jobs:
           git config --global user.email "actions@github.com"
           git config --global user.name "GitHub Actions"
           git add $COUNTER_FILE
-          git commit -m "Update workflow run count for @${{ github.actor }}"
+          git commit -m "Update workflow run count for device ${{ inputs.CODENAME }}"
           git push
         if: steps.check_limit.outcome == 'success'
 
