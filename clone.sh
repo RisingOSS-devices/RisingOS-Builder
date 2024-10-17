@@ -29,6 +29,9 @@ function get_remote_url {
     bitbucket)
       echo "https://bitbucket.org/$repo.git"
       ;;
+    codeberg)
+      echo "https://codeberg.org/$repo.git"
+      ;;
     *)
       echo "https://github.com/$repo.git"
       ;;
