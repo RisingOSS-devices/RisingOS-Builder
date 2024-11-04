@@ -102,7 +102,7 @@ function process_dependencies {
   echo "Found dependencies file: $dependencies_file"
   jq -c '.[]' "$dependencies_file" | while read -r dependency; do
     local dependency_repository=$(echo "$dependency" | jq -r '.repository')
-    local dependency_branch=$(echo "$dependency" | jq -r '.branch // "fourteen"')
+    local dependency_branch=$(echo "$dependency" | jq -r '.branch // "fifteen"')
     local dependency_target_path=$(echo "$dependency" | jq -r '.target_path')
     local remote_name=$(echo "$dependency" | jq -r '.remote // "github"')
     local username=""

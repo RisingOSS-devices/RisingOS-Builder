@@ -30,7 +30,7 @@ init_repo() {
         log "Cloning stable source"
     fi
 
-    repo init -u "$init_url" -b fourteen --git-lfs --depth=1 >> "$OUTPUT_FILE" 2>&1 || {
+    repo init -u "$init_url" -b fifteen --git-lfs --depth=1 >> "$OUTPUT_FILE" 2>&1 || {
         log "Error: repo init failed. Check $OUTPUT_FILE for details."
         exit 1
     }
