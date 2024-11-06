@@ -32,6 +32,9 @@ function get_remote_url {
     codeberg)
       echo "https://codeberg.org/$repo.git"
       ;;
+    git.mainlining)
+      echo "https://git.mainlining.org/$repo.git"
+      ;;
     *)
       echo "https://github.com/$repo.git"
       ;;
