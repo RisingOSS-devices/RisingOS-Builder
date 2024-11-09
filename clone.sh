@@ -35,6 +35,9 @@ function get_remote_url {
     git.mainlining)
       echo "https://git.mainlining.org/$repo.git"
       ;;
+    repo.radio)
+      echo "https://repo.radio/$repo.git"
+      ;;
     *)
       echo "https://github.com/$repo.git"
       ;;
