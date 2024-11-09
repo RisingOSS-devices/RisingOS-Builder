@@ -75,7 +75,7 @@ main() {
     : > "$OUTPUT_FILE"
     rm -f "$DELETED_REPOS_FILE"
 
-    update_repo_tool
+    #update_repo_tool
     init_repo
     perform_sync
 
