@@ -23,7 +23,7 @@ update_repo_tool() {
 init_repo() {
     local init_url="$STABLE_REPO_URL"
     
-    if [[ "${STAGING:-false}" == "true" && "${RELEASE:-}" != "stable" ]]; then
+    if [[ "${RELEASE:-}" == "test" ]]; then
         init_url="$STAGING_REPO_URL"
         log "Cloning staging source"
     else
